@@ -34,12 +34,12 @@ jobs:
             -v ${{ github.workspace }}:/home/dev/project \
             -v ~/.conan2:/root/.conan2 \
             ${{ env.IMAGE_NAME }} bash -c '
-              ./scripts/configure.sh release &&
+              ./scripts/configure.sh release default shared &&
               cmake --build --preset release &&
               ctest --build-config Release --test-dir temp/build/release --output-on-failure &&
               cd temp/build/release && cpack
             '
-      
+
       # Opcional: Cambiar los permisos para que la acción de GitHub pueda leer los archivos generados por root
       - name: Fix permissions
         run: sudo chown -R $USER:$USER ${{ github.workspace }}/temp/build/release/packages
