@@ -27,6 +27,17 @@ docker-compose -f docker/docker-compose.yml exec dev-env bash
 
 A partir de aquí, **todos los comandos de este README se ejecutan dentro del contenedor** (verás el prompt `[dev@... project]$`), salvo que se indique explícitamente "desde el host".
 
+### Configurar git dentro del contenedor
+
+git config --global user.email "tu@email.com"
+git config --global user.name "Tu Nombre"
+
+Tambien en docker/docker-compose.yml se añade el volumen ${HOME}/.ssh:/home/dev/.ssh:ro para poder realizar push.
+
+Si lo consideras invasivo recuerda que puedes eliminarlo.
+
+Necesario para pre-commits o realizar push
+
 ### 2.2. Compilar y probar por primera vez
 
 ```bash
@@ -93,7 +104,7 @@ cmake --build --preset debug
 ctest --preset debug --output-on-failure
 ```
 
-Incluye: warnings estrictos, sanitizers (ASan + UBSan), clang-tidy y símbolos de debug completos.
+Incluye: warnings estrictos, sanitizers (ASan + UBSan), clang-tidy y símbolos de debug completos. Como MSan no es compatible con ASan, es solo para Clang y se debe compilar libc++/libstdc++ instrumentadas con MSan se opto por no añadirla como opción a la configuración.
 
 Para iterar rápido tras el primer `configure`:
 
@@ -227,6 +238,153 @@ mkdir -p fuzz/corpus/shape_printer
 ```
 
 Ver sección 6.14 para añadir nuevos fuzz targets.
+
+### 4.11 Añadir hilos
+
+Para aquellos que quieran utilizar hilos simplemente tiene que añadir al CMakeLists.txt raíz
+```cmake
+find_package(Threads REQUIRED)
+```
+
+Y en el target_link_libraries en ru respectiva interfaz PUBLIC|PRIVATE|INTERFACE según el caso de uso del usuario, añadimos:
+```cmake
+Threads::Threads
+```
+
+En CMakeLists.txt raíz y src/CMakeLists.txt hay un ejemplo comentado, ya que, la plantilla nuestra no hace uso de hilos
+
+### 4.12 Añadir otras funcionalidades
+
+En base al apartado 4.11, no solamente los hilos se deben habilitar, otras utilidades también pueden tener la necesidad de ser hanilitadas, ya sea por diseño o por la versión del compilador, algunos ejemplo son:
+
+- Librería Matemática (m)
+- Funciones de enlace dinámico (dl)
+- Relojes de tiempo real (rt)
+- Operaciones Atómicas (atomic)
+- Políticas de Ejecución / Parallel STL (TBB)
+- Stack Trace (dw / bfd)
+
+### 4.13 Precompiled Header Files (PCH)
+
+Cuando se usa muhco un header como puede ser <string>, este realentiza el proceso de compilación al tener includes dentro los .cpp, con este método solo se compila una vez, por ejmplo en src/CMakeLists.txt:
+```cmake
+target_precompile_headers(devkit_shapes
+    PRIVATE
+        <string>
+        <memory>
+        <fmt/format.h>
+)
+```
+
+Benchmark y test puedan reutilizarlo (Solo funciona si ambos targets comparten compilador/flags compatibles) añadiendo tras add_executable/target_link_libraries:
+```cmake
+target_precompile_headers(devkit_tests REUSE_FROM devkit_shapes)
+```
+
+En CMake, la funcionalidad REUSE_FROM de target_precompiled_headers permite que un target reutilice el binario de cabecera precompilada (.gch o .pch) ya generado por otro target, ahorrando espacio en disco y tiempo de CPU adicional. Sin embargo, en este proyecto no se debe utilizar REUSE_FROM por los siguientes motivos técnicos:
+1. Incompatibilidad Fundamental: PIC vs. PIE
+
+    Librerías (devkit_shapes): Se compilan con el flag -fPIC (Position Independent Code). Es un requisito para que el código de la librería sea reubicable, especialmente si se decide compilar como biblioteca compartida (.so).
+
+    Ejecutables (tests, app, benchmarks): Debido a la política de seguridad definida en Hardening.cmake, los ejecutables se compilan con el flag -fPIE (Position Independent Executable). Esto activa el ASLR (Address Space Layout Randomization), una mitigación crítica contra exploits que aleatoriza las direcciones de memoria en tiempo de ejecución.
+
+El compilador (GCC/Clang) rechaza un PCH si los flags que afectan a la generación de código no coinciden exactamente. Intentar usar un PCH generado con -fPIC en un target con -fPIE provocará el error: created and used with different settings of -fpie.
+2. Seguridad sobre Rendimiento (Hardening)
+
+Desactivar el flag de Hardening para permitir la reutilización de los PCH degradaría la postura de seguridad del software. Los beneficios de protección contra ataques de corrupción de memoria (gracias a -fPIE y -pie) son innegociables en una plantilla profesional y superan con creces el ahorro de unos pocos segundos en el tiempo de compilación.
+3. Macros y Definiciones de Preprocesador
+
+El hardening inyecta macros adicionales (como _FORTIFY_SOURCE=2) que a menudo solo se aplican en configuraciones de Release u optimizadas. Si un target origen no tiene exactamente las mismas definiciones de preprocesador que el target destino, el PCH será invalidado por el compilador para evitar comportamientos indefinidos (UB).
+Recomendación de implementación
+
+Para maximizar la velocidad sin sacrificar la seguridad ni la estabilidad:
+
+    Aislamiento: Cada target debe definir sus propios PCH de forma PRIVATE.
+
+    Propagación de Lista, no de Binario: En lugar de heredar el archivo binario compilado, se recomienda heredar la lista de cabeceras a través de funciones configuradoras (como devkit_configure_target), permitiendo que CMake genere un binario PCH específico y compatible para cada target.
+
+Por útimo en StaticAnalyzers.cmake debemos añadir --extra-arg=-Wno-ignored-gch para si el PCH se compilo con GCC y despues se utiliza Clang y no falle la compilación.
+
+### 4.14 Unity Build
+
+Agrupa todos los ficheros .cpp en menos unidades para reducir los tiempos de compilación, esta desactivado por defecto pero es especialmente en proyectos con muchos ficheros .cpp. Recuerda que puede esconder bugs de ODR, colisiones de simbolos o de macros entre ficheros. Se controla con DEVKIT_ENABLE_UNITY_BUILD (cmake/Unitybuild.cmake), ejemplo:
+```bash
+cmake --preset release -DDEVKIT_ENABLE_UNITY_BUILD=ON
+cmake --build --preset release
+```
+
+### 4.15 CPack
+
+Genera instaladores/paquetes (.tar.gz, .deb, .rpm) a partir de tus reglas install() ya existentes, ejemplo de alguna de las variables que configura al final del CMakeLists.txt raíz:
+```cmake
+if(DEVKIT_IS_TOP_LEVEL)
+    set(CPACK_PACKAGE_NAME "devkit")
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_VENDOR "Tu Nombre")
+    set(CPACK_PACKAGE_CONTACT "tu@email.com")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_DESCRIPTION}")
+    set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+    set(CPACK_GENERATOR "TGZ;DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
+    include(CPack)
+endif()
+```
+
+Requiere que el usuario tengo instalado dpkg, dpkg-dev y rmp-build, sin ellos solo se puede generar tar.gz
+
+Ejemplo de uso:
+```bash
+./scripts/configure.sh release
+cmake --build --preset release
+cd temp/build/release && cpack
+```
+
+Los paquetes se generan dentro de temp/build/release/packages, solo aplica si lo ejecutas tu mismo o via release.yml
+
+Con los paquetes generados el usuario final no tiene porque clonar el repo ni compilar:
+```bash
+sudo dpkg -i devkit-<version>Linux.deb
+sudo dnf install ./devkit-<version>-Linus.rpm
+```
+
+Instala la libreria dentro de /usr/local/include/ y /usr/local/lib/ listo para enlazar con find_package(devkit)
+
+### 4.16 Seguridad ante ataques
+
+En cmake/Hardening.cmake se añaden flag para habilitar la protección frente ataques comnues como puede ser la protección de la pila. Estos se aplican solamente a Release, parte de la lista de protecciones esta formada por:
+- fstack-protector-strong: añade protecciones de canary
+- _FORTIFY_SOURCE=2: Activa comprobaciones adicionales de seguridad proporcionadas por la libc cuando el compilador puede conocer tamaños de buffers.
+- /guard:cf: Activa Control Flow Guard (CFG).
+- /DYNAMICBASE: Indica al linker que el ejecutable pueda utilizar ASLR (Address Space Layout Randomization).
+- /NXCOMPAT: Marca el ejecutable como compatible con DEP/NX, haciendo que determinadas regiones de memoria no sean ejecutables
+- fPIE: Compila el código del ejecutable como Position Independent Executable.
+- pie: Le dice al linker que genere un ejecutable PIE
+- -z relro: Hace que determinadas estructuras utilizadas durante las relocaciones puedan quedar en memoria de solo lectura después de la inicialización.
+- -z now: Fuerza la resolución inmediata de símbolos dinámicos en lugar de hacerlo de forma perezosa.
+- Full RELRO: ofrece mayor protección que Partial frente a determinadas técnicas de explotación de binarios ELF.
+
+Se aplica por defecto, pero se puede desactivar con:
+```bash
+cmake --preset release -DDEVKIT_ENABLE_HARDENING=OFF
+```
+
+Funciona tanto con generadores de un solo config como multi-config
+
+### 4.17. Recompilación y tests automáticos al guardar (watch mode)
+
+`entr` vigila los ficheros fuente y recompila + corre los tests automáticamente en cada cambio:
+
+\`\`\`bash
+./scripts/watch.sh debug
+\`\`\`
+
+Útil en sesiones de refactor con TDD. A diferencia de lenguajes interpretados, el ciclo incluye recompilación (mitigada por ccache), así que el feedback no es instantáneo — sigue aportando valor automatizando el "olvidarte de correr los tests" tras cada cambio, pero puede sentirse pesado si tocas ficheros muy seguido con sanitizers/clang-tidy activos.
+
+> Si añades un fichero nuevo (no solo editas uno existente), reinicia `watch.sh` — `entr` no detecta ficheros creados después de arrancar.
+
+Modifica ./scripts/watch.sh a tu gusto en caso de que queria configurarlo para benchmarks, docs, coverage...
+
+Posibles alternativas a entr: watchexec (no esta instalado ya que no esta en el repositorio de fedora oficial y requeriria compilarlo con Rust, añadiendo más dependecias innecesarias)
 
 ---
 
@@ -1087,7 +1245,39 @@ Most people use VS-Code even to develope inside a Docker container, .devcontaine
 
 ---
 
-## 14. Referencia rápida de comandos
+## 14 .editconfig
+
+En la raíz existe un .editconfig que indica a los IDE modernos la configuración de edición, es compatible con clang-format ya que este solo trata con los ficheros de C++ y talvez el usuario quiere una edición diferente para scripts de Python o Bash. Esto no es un formateador en tiempo real, simplemente configura por ejemplo al presionar tab el número de espacios con los que rellena. En VS Code se necesita la extension EditorConfig
+
+---
+
+## 15 .gitaatributes
+
+Normaliza finales de línea y marca binarios explícitamente, para evitar diffs espurios y corrupción de binarios al clonar desde distintos SO.
+
+---
+
+## 16 .env
+
+Recuerda añadirlo al .gitignore a diferencia del de Docker/.env y situarlo en la raíz del proyecto.
+
+---
+
+## 17 Clang-Tidy --fix
+
+En caso de que quieras que clang-tidy arregle las sugerencias en tu codigo. En cmake/StaticAnylizer.cmake la segunda función en la que realiza el fix y se puede modificar sobre que directorios quiere que realice el fix, por defecto src/ y inc/
+
+```bash
+git status                                        # confirma que no hay cambios sin commitear
+./scripts/configure.sh debug clang                # clang-tidy necesita compile_commands.json ya generado
+cmake --preset debug -DENABLE_CLANG_TIDY=ON        # si no estaba ya activado (en debug lo está por defecto)
+cmake --build temp/build/debug --target clang-tidy-fix
+git diff
+```
+
+---
+
+## 17. Referencia rápida de comandos
 
 ```bash
 # Entorno

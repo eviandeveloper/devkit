@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(devkit
-    VERSION 0.6.0
+    VERSION 0.7.0
     DESCRIPTION "Plantilla profesional de proyecto C++"
     LANGUAGES CXX
 )
@@ -36,8 +36,20 @@ include(Coverage)
 include(Documentation)
 include(Valgrind)
 include(Fuzzing)
+include(Hardening)
+include(UnityBuild)
 include(Devkit)
 include(Version)
+
+
+# ==============================================================================
+# En caso de querer añadir hilos basta con descomentar find_package(Threads REQUIRED)
+# y añadirlo al target_link_libraries de cada subproyecto
+# por ejemplo el comentando en src/CMAKELists.txt
+# recuerda que si lo pones como PUBLIC los proyectos que dependan de ese subproyecto
+# heredan hilos
+# ==============================================================================
+#find_package(Threads REQUIRED)
 
 # ==============================================================================
 # fmt: si el target ya existe (traído por Conan, o por el consumidor vía su
@@ -146,3 +158,40 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/devkitConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/devkit
 )
+
+
+# CPack
+if(DEVKIT_IS_TOP_LEVEL)
+    # 1. Identificar librerías del sistema (runtimes del compilador)
+    include(InstallRequiredSystemLibraries)
+
+    set(CPACK_PACKAGE_NAME "devkit")
+    set(CPACK_PACKAGE_VENDOR "Tu Nombre o Empresa")
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Librería profesional de formas geométricas")
+    set(CPACK_PACKAGE_CONTACT "tu@email.com")
+    set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+
+    # Formatos: Tarball (genérico), DEB (Debian/Ubuntu/Docker), RPM (Fedora)
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+
+    # --- Configuración específica para DEB ---
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
+
+    # Intentar detectar la arquitectura (amd64 habitualmente)
+    if(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+    endif()
+
+    # IMPORTANTE: Autodetecta dependencias de librerías del sistema (libc, libstdc++, etc.)
+    # Requiere que dpkg-shlibdeps esté instalado en el sistema
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+    # Elimina símbolos de debug de los binarios instalados para reducir tamaño
+    set(CPACK_STRIP_FILES ON)
+
+    # Organiza el paquete en la carpeta del build, no en la raíz del proyecto
+    set(CPACK_PACKAGE_DIRECTORY "${PROJECT_BINARY_DIR}/packages")
+
+    include(CPack)
+endif()

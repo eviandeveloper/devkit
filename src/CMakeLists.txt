@@ -34,11 +34,20 @@ target_include_directories(devkit_shapes
 )
 
 target_link_libraries(devkit_shapes
-    PRIVATE
+    PUBLIC # publico al dejar que benchmark y test usen PCH de devkit_shapes
         fmt::fmt
+        #Threads::Threads
 )
 
 # Aplica warnings, sanitizers, optimizaciones y análisis estático
 # SOLO a estos target (nuestro código), nunca a fmt ni a gtest.
 devkit_configure_target(devkit_shapes)
 devkit_configure_target(devkit_shapes_main)
+
+# PCH para realizar una compilación más rapida, recomendado que sea PRIVATE
+target_precompile_headers(devkit_shapes
+    PRIVATE
+        <string>
+        <memory>
+        <fmt/format.h>
+)

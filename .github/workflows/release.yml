@@ -17,27 +17,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-${{ runner.os }}-gcc-release-${{ hashFiles('conanfile.py') }}
+          restore-keys: |
+            conan-${{ runner.os }}-gcc-release-
+
       - name: Build dev image
         run: docker compose -f docker/docker-compose.yml build dev-env
 
-      - name: Configure, build and test (Release)
+      - name: Configure, build, test and CPACK (Release)
         run: |
-          docker run --rm --user root -v ${{ github.workspace }}:/home/dev/project \
+          docker run --rm --user root \
+            -v ${{ github.workspace }}:/home/dev/project \
+            -v ~/.conan2:/root/.conan2 \
             ${{ env.IMAGE_NAME }} bash -c '
               ./scripts/configure.sh release &&
               cmake --build --preset release &&
-              ctest --build-config Release --test-dir temp/build/release --output-on-failure
+              ctest --build-config Release --test-dir temp/build/release --output-on-failure &&
+              cd temp/build/release && cpack
             '
-
-      - name: Package binaries
-        run: |
-          mkdir -p release-artifacts
-          tar -czf release-artifacts/devkit-${{ github.ref_name }}-linux-x86_64.tar.gz \
-            -C bin/release .
+      
+      # Opcional: Cambiar los permisos para que la acción de GitHub pueda leer los archivos generados por root
+      - name: Fix permissions
+        run: sudo chown -R $USER:$USER ${{ github.workspace }}/temp/build/release/packages
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-artifacts/*.tar.gz
+          # Buscamos todos los instaladores generados por CPack en la carpeta packages
+          files: |
+            temp/build/release/packages/*.tar.gz
+            temp/build/release/packages/*.deb
+            temp/build/release/packages/*.rpm
           generate_release_notes: true
           body_path: CHANGELOG.md

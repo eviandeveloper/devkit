@@ -10,12 +10,15 @@ For now there is only support for Linux environments due to a lack of knowledge 
 
 There is only support for GitHub Actions or fetching content from CMake in case somebody wanted support for Codeberg, but it shouldn't be that difficult to add it or migrate.
 
+Since Modules support is still buggy in GCC and CLang it wont be supported in this configuration from now
+
 ## Software development best practices taken in consideration
 
 Agnostic to programming language best practices enforced in software development:
 - Generate a documentation website (we will use Doxygen and Graphviz)
 - Coverage website based on the tests.
 - Add a suite of test cases to verify that our does the expected
+- Automatize running tests on watch
 - Apply fuzzing techniques to find bugs
 - Have a Test / Release / Debug configuration
 - Use Docker to make the project reproducible and easy to set up almost out of the box (still needs to be polished due to the use of Fedora as the base image).
@@ -29,6 +32,9 @@ Agnostic to programming language best practices enforced in software development
 - Separate interface (.hpp) from implementation (.cpp)
 - Use continuous integration (CI) to trigger automated tests/processes once we have merged our changes into the main repository, in this case GitHub. <<<IMPORTANT>>> In GitHub it is only free if your repository is public; otherwise you have limited time and you might have to pay.
 - Some people might care about the performance of their libraries, so we will have a benchmark for our C++ code.
+- Pre-commit to check code format.
+- Hardening the binaries.
+- .env file to store envirioment variables.
 
 ## C++ project configuration problems
 
@@ -42,6 +48,7 @@ The common problems/configurations in a C++ project that we want to take into co
 - Setup a fuzzer (libFuzzer from Clang).
 - Set up Ninja to speed up the building process.
 - Set up ccache to avoid recompiling.
+- Install our library via Cpack
 
 ## Dependecies
 
@@ -67,6 +74,7 @@ Installed via the DNF package manager are those packages that are only meant for
 - git
 - findutils
 - make
+- dpkg
 - diffutils
 - graphviz
 - gdb
@@ -78,6 +86,7 @@ Installed via the DNF package manager are those packages that are only meant for
 - doxygen
 - cppcheck
 - include-what-you-use
+- entr
 
 ## Packages installed through Python inside the container
 

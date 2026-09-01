@@ -64,6 +64,7 @@ conan install . \
     --output-folder="${OUTPUT_DIR}" \
     --build=missing \
     -c user.devkit:local_dev=True \
+    -c tools.cmake.cmaketoolchain:user_presets=False \
     "${CONAN_PROFILE_ARGS[@]}" \
     "${CONAN_SHARED_ARGS[@]}" \
     -s build_type="${BUILD_TYPE}"

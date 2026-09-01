@@ -15,6 +15,16 @@ target_link_libraries(devkit_tests
         GTest::gmock
 )
 
+# conflicto de -fPIC -fPIE por eso no reusamos
+#target_precompile_headers(devkit_tests REUSE_FROM devkit_shapes)
+target_precompile_headers(devkit_tests
+    PRIVATE
+        <gtest/gtest.h>
+        <gmock/gmock.h>
+        <string>
+        <vector>
+)
+
 devkit_configure_target(devkit_tests)
 
 # Descubre automáticamente los tests individuales dentro del ejecutable,

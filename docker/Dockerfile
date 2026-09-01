@@ -34,6 +34,9 @@ RUN dnf -y install \
     findutils \
     procps-ng \
     make \
+    dpkg \
+    dpkg-dev \
+    rpm-build \
     tar \
     gzip \
     bzip2 \
@@ -49,6 +52,7 @@ RUN dnf -y install \
     lldb \
     strace \
     ltrace \
+    entr \
     perf \
     valgrind \
     doxygen \
@@ -63,6 +67,8 @@ RUN dnf -y install \
 COPY docker/requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
+
+RUN pre-commit install
 
 # ============================================================================
 # Usuario de desarrollo

@@ -1,0 +1,27 @@
+# ==============================================================================
+# .gitattributes
+# Normaliza finales de línea y marca binarios explícitamente, para evitar
+# diffs espurios y corrupción de binarios al clonar desde distintos SO.
+# ==============================================================================
+
+* text=auto eol=lf
+
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h   text eol=lf
+*.in  text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.py  text eol=lf
+*.sh  text eol=lf diff
+*.md  text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Binarios: nunca normalizar, ni generar diff textual
+*.png binary
+*.jpg binary
+*.gz  binary
+*.deb binary
+*.rpm binary

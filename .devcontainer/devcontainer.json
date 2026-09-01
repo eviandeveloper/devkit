@@ -27,7 +27,8 @@
         "ms-azuretools.vscode-docker",
         "ms-vscode-remote.remote-containers",
         "cschlosser.doxdocgen",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "EditorConfig.EditorConfig"
       ]
     }
   },

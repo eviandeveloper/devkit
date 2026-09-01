@@ -12,6 +12,14 @@ target_link_libraries(devkit_benchmarks
         benchmark::benchmark_main
 )
 
+# conflicto de -fPIC -fPIE por eso no reusamos
+#target_precompile_headers(devkit_benchmarks REUSE_FROM devkit_shapes)
+target_precompile_headers(devkit_benchmarks
+    PRIVATE
+        <benchmark/benchmark.h>
+        <string>
+)
+
 devkit_configure_target(devkit_benchmarks)
 
 set_target_properties(devkit_benchmarks PROPERTIES

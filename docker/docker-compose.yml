@@ -15,6 +15,7 @@ services:
 
     volumes:
       - ..:/home/dev/project:z
+      - ${HOME}/.ssh:/home/dev/.ssh:ro
       - ccache:/home/dev/.cache/ccache
       - conan:/home/dev/.conan2
 
