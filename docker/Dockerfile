@@ -68,8 +68,6 @@ COPY docker/requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
-RUN pre-commit install
-
 # ============================================================================
 # Usuario de desarrollo
 # ============================================================================

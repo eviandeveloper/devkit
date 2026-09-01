@@ -32,5 +32,6 @@
       ]
     }
   },
-  "remoteUser": "dev"
+  "remoteUser": "dev",
+  "postCreateCommand": "pre-commit install"
 }
