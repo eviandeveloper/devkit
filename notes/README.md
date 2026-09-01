@@ -1270,7 +1270,7 @@ En caso de querer verificar el formato, con pip se installa precommits, y si tu 
 pre-commit install
 ```
 
-Y en cada commit comprobara con clang-format el formato del código y no dejara realizar commit si el codigo no esta según las especificaciones.
+Y en cada commit comprobara con clang-format el formato del código y no dejara realizar commit si el codigo no esta según las especificaciones. Recuerda que no esta activado por defecto y debes ejecutar el comando tu mismo.
 
 ---
 
