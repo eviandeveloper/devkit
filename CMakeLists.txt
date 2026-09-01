@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(devkit
-    VERSION 0.7.3
+    VERSION 0.7.4
     DESCRIPTION "Plantilla profesional de proyecto C++"
     LANGUAGES CXX
 )
@@ -73,10 +73,25 @@ if(NOT TARGET fmt::fmt)
 endif()
 
 # Directorios de salida homogéneos para todas las configuraciones
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${PROJECT_SOURCE_DIR}/bin/debug")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${PROJECT_SOURCE_DIR}/bin/release")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PROJECT_SOURCE_DIR}/bin/release")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY                "${PROJECT_SOURCE_DIR}/bin/debug")
+set(OUTPUT_BIN_DEBUG   "${PROJECT_SOURCE_DIR}/bin/debug")
+set(OUTPUT_BIN_RELEASE "${PROJECT_SOURCE_DIR}/bin/release")
+
+# Configuración para DEBUG
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_BIN_DEBUG}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_BIN_DEBUG}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_BIN_DEBUG}")
+
+# Configuración para RELEASE
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_BIN_RELEASE}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_BIN_RELEASE}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_BIN_RELEASE}")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${OUTPUT_BIN_RELEASE}")
+
+# Fallback por si no se detecta configuración (ej. algunos generadores mono-config)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_BIN_DEBUG}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_BIN_DEBUG}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_BIN_DEBUG}")
 
 # Detecta si devkit es el proyecto top-level o está embebido via FetchContent/add_subdirectory
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
@@ -171,6 +186,8 @@ if(DEVKIT_IS_TOP_LEVEL)
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Librería profesional de formas geométricas")
     set(CPACK_PACKAGE_CONTACT "tu@email.com")
     set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+    set(CPACK_RPM_PACKAGE_REQUIRES "fmt-devel >= 11.0.2")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfmt-dev (>= 11.0.2)")
 
     # Formatos: Tarball (genérico), DEB (Debian/Ubuntu/Docker), RPM (Fedora)
     set(CPACK_GENERATOR "TGZ;DEB;RPM")

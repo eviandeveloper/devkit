@@ -6,6 +6,14 @@ add_library(devkit_shapes
 
 add_library(devkit::shapes ALIAS devkit_shapes)
 
+# VERSIONADO BINARIO (Fundamental para .so en Linux)
+# VERSION: versión completa del proyecto (0.7.3)
+# SOVERSION: versión de la API (normalmente solo el Major: 0)
+set_target_properties(devkit_shapes PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+)
+
 # por separado para evitar simbolos duplicados en el linker y que un tercer usuario pueda utilizar el main que quiera
 add_library(devkit_shapes_main STATIC devkit_main.cpp)
 add_library(devkit::shapes_main ALIAS devkit_shapes_main)

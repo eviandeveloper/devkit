@@ -1,3 +1,6 @@
-#include(CMakeFindDependencyMacro)
-#find_dependency(fmt)
+include(CMakeFindDependencyMacro)
+# Solo busca fmt si no ha sido traído ya por otro sitio (como Conan o FetchContent)
+if(NOT TARGET fmt::fmt)
+    find_dependency(fmt)
+endif()
 include("${CMAKE_CURRENT_LIST_DIR}/devkitTargets.cmake")

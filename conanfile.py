@@ -4,7 +4,7 @@ from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 
 class DevkitConan(ConanFile):
     name = "devkit"
-    version = "0.7.3"
+    version = "0.7.4"
     license = "MIT"
     url = "https://github.com/EV2872/devkit"
     description = "Librería de ejemplo de figuras geométricas (Circle, Rectangle) sobre fmt."
