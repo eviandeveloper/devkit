@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(devkit
-    VERSION 0.7.1
+    VERSION 0.7.2
     DESCRIPTION "Plantilla profesional de proyecto C++"
     LANGUAGES CXX
 )
@@ -177,6 +177,11 @@ if(DEVKIT_IS_TOP_LEVEL)
 
     # --- Configuración específica para DEB ---
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
+
+    # Comprobación de seguridad para el archivo de licencia
+    if(EXISTS "${PROJECT_SOURCE_DIR}/LICENSE")
+        set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+    endif()
 
     # Intentar detectar la arquitectura (amd64 habitualmente)
     if(NOT CPACK_DEBIAN_PACKAGE_ARCHITECTURE)

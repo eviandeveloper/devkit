@@ -4,19 +4,19 @@ from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 
 class DevkitConan(ConanFile):
     name = "devkit"
-    version = "0.7.1"
+    version = "0.7.2"
     license = "MIT"
     url = "https://github.com/EV2872/devkit"
     description = "Librería de ejemplo de figuras geométricas (Circle, Rectangle) sobre fmt."
     topics = ("geometry", "shapes", "example")
 
     settings = "os", "compiler", "build_type", "arch"
-    options = { "shared": [True, False], 
+    options = { "shared": [True, False],
                 "fPIC": [True, False],
                 "test_framework": ["gtest", "catch2"]
     }
-    default_options = {"shared": False, 
-                       "fPIC": True, 
+    default_options = {"shared": False,
+                       "fPIC": True,
                        "test_framework": "gtest"}
 
     exports_sources = (
@@ -25,6 +25,7 @@ class DevkitConan(ConanFile):
         "inc/*",
         "src/*",
         "version/*",
+        "LICENSE"
     )
 
     def config_options(self):

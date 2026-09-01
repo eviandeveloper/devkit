@@ -1263,7 +1263,18 @@ Recuerda añadirlo al .gitignore a diferencia del de Docker/.env y situarlo en l
 
 ---
 
-## 17 Clang-Tidy --fix
+## 17 Pre-commits
+
+En caso de querer verificar el formato, con pip se installa precommits, y si tu proyecto esta adminsitrado por git ejecutas:
+```bash
+pre-commit install
+```
+
+Y en cada commit comprobara con clang-format el formato del código y no dejara realizar commit si el codigo no esta según las especificaciones.
+
+---
+
+## 18 Clang-Tidy --fix
 
 En caso de que quieras que clang-tidy arregle las sugerencias en tu codigo. En cmake/StaticAnylizer.cmake la segunda función en la que realiza el fix y se puede modificar sobre que directorios quiere que realice el fix, por defecto src/ y inc/
 
