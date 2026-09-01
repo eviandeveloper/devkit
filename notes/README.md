@@ -341,13 +341,58 @@ cd temp/build/release && cpack
 
 Los paquetes se generan dentro de temp/build/release/packages, solo aplica si lo ejecutas tu mismo o via release.yml
 
-Con los paquetes generados el usuario final no tiene porque clonar el repo ni compilar:
+Con los paquetes generados el usuario final no tiene porque clonar el repo ni compilar. Instala la libreria dentro de /usr/local/include/ y /usr/local/lib/ listo para enlazar con find_package(devkit)
+
+Esta automatizado para que por parte del desarrollador solo tenga que hacer un push normal con el proceso de ./scripsts/release.sh ya mencionado, y el tercero que quiere instalar la liberia debe ejecutar (ejemplo Fedora con rpm):
 ```bash
-sudo dpkg -i devkit-<version>Linux.deb
-sudo dnf install ./devkit-<version>-Linus.rpm
+wget https://github.com/eviandeveloper/devkit/releases/download/v0.7.6/devkit-0.7.6-Linux.rpm
+sudo dnf install ./devkit-0.7.6-Linux.rpm
+cmake -B build
+cmake --build build
+./build/prueba_devkit
 ```
 
-Instala la libreria dentro de /usr/local/include/ y /usr/local/lib/ listo para enlazar con find_package(devkit)
+para borrar la libreria:
+- Fedora
+```bash
+sudo dnf remove devkit
+```
+
+ejemplo de cmake necesario por parte del tercer:
+```cmake
+cmake_minimum_required(VERSION 3.25)
+project(prueba_devkit LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(devkit REQUIRED)
+
+add_executable(prueba_devkit main.cpp)
+target_link_libraries(prueba_devkit PRIVATE devkit::shapes)
+```
+
+ejemplo de main.cpp del tercero:
+```c++
+#include <iostream>
+#include "devkit/circle.hpp"
+#include "devkit/shape_printer.hpp"
+
+int main() {
+    devkit::Circle circle(3.0);
+    std::cout << devkit::DescribeShape(circle) << '\n';
+    return 0;
+}
+```
+
+En distribuciones basadas en debian:
+```bash
+apt install -y ./devkit-0.7.6-Linux.deb
+```
+
+```bash
+apt-get remove devkit
+```
 
 ### 4.16 Seguridad ante ataques
 

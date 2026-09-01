@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(devkit
-    VERSION 0.7.6
+    VERSION 0.7.7
     DESCRIPTION "Plantilla profesional de proyecto C++"
     LANGUAGES CXX
 )
@@ -67,7 +67,7 @@ if(NOT TARGET fmt::fmt)
     FetchContent_Declare(
         fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG        11.0.2
+        GIT_TAG        10.0.0
     )
     FetchContent_MakeAvailable(fmt)
 endif()
@@ -140,6 +140,11 @@ devkit_register_cppcheck_target()
 # ==============================================================================
 include(GNUInstallDirs)
 
+if(DEVKIT_IS_TOP_LEVEL)
+    set(CMAKE_INSTALL_LIBDIR "lib" CACHE PATH "Output directory for libraries" FORCE)
+    message(STATUS "[Config] Forzando CMAKE_INSTALL_LIBDIR a '${CMAKE_INSTALL_LIBDIR}' para compatibilidad cruzada")
+endif()
+
 install(TARGETS devkit_shapes devkit_shapes_main
     EXPORT devkitTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -186,8 +191,8 @@ if(DEVKIT_IS_TOP_LEVEL)
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Librería profesional de formas geométricas")
     set(CPACK_PACKAGE_CONTACT "tu@email.com")
     set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-    set(CPACK_RPM_PACKAGE_REQUIRES "fmt-devel >= 11.0.2")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfmt-dev (>= 11.0.2)")
+    set(CPACK_RPM_PACKAGE_REQUIRES "fmt-devel >= 10.0.0")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libfmt-dev (>= 10.0.0)")
 
     # Formatos: Tarball (genérico), DEB (Debian/Ubuntu/Docker), RPM (Fedora)
     set(CPACK_GENERATOR "TGZ;DEB;RPM")
