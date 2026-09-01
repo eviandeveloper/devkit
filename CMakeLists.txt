@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(devkit
-    VERSION 0.7.5
+    VERSION 0.7.6
     DESCRIPTION "Plantilla profesional de proyecto C++"
     LANGUAGES CXX
 )

@@ -38,7 +38,7 @@ target_include_directories(devkit_shapes
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/generated/inc>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/inc>
-        $<INSTALL_INTERFACE:inc>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> 
 )
 
 target_link_libraries(devkit_shapes
